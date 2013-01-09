@@ -34,9 +34,9 @@ class RecognizeImAPI {
 		throw new Exception($r['message'], $r['status']);
 	}
 
-	public static function recognize($image) {
+	public static function recognize($image, $allResults = FALSE) {
 			$hash = md5(self::$config['API_KEY'].$image);
-			$url = self::$config['URL'].'/recognize/'.self::$config['CLIENT_ID'];
+			$url = self::$config['URL'].'/recognize/'.($allResults?'allResults/':'').self::$config['CLIENT_ID'];
 			$ch = curl_init($url);
 			curl_setopt($ch, CURLOPT_HEADER, 0);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
