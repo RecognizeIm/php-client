@@ -34,9 +34,24 @@ class RecognizeImAPI {
 		throw new Exception($r['message'], $r['status']);
 	}
 
-	public static function recognize($image, $allResults = FALSE) {
+	/**
+	 * Recognize object using image
+	 * @param $image query
+	 * @param $mode Recognition mode. Should be 'single' or 'multi'. Default is 'single'.
+	 * @param $allResults if TRUE returns all recognized objects in 'single' mode; otherwize only the best one
+	 * @returns associative array containg recognition result
+	 */
+	public static function recognize($image, $mode = 'single', $allResults = FALSE) {
+			if (!in_array($mode, array('single', 'multi')))
+				throw new Exception('Wrong \'mode\' value. Should be "single" or "multi"');
 			$hash = md5(self::$config['API_KEY'].$image);
-			$url = self::$config['URL'].'/recognize/'.($allResults?'allResults/':'').self::$config['CLIENT_ID'];
+			$url = self::$config['URL'].'/recognize/';
+			if ($mode == 'multi') {
+				$url .='multi/';
+			} else if ($allResults) {
+				$url .= 'allResults/';
+			}
+			$url .= self::$config['CLIENT_ID'];
 			$ch = curl_init($url);
 			curl_setopt($ch, CURLOPT_HEADER, 0);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
