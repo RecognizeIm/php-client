@@ -42,6 +42,10 @@ class RecognizeImAPI {
 	 * @returns associative array containg recognition result
 	 */
 	public static function recognize($image, $mode = 'single', $allResults = FALSE) {
+		if (is_bool($mode)) {
+			$allResults = $mode;
+			$mode = 'single';
+		}
 			if (!in_array($mode, array('single', 'multi')))
 				throw new Exception('Wrong \'mode\' value. Should be "single" or "multi"');
 			$hash = md5(self::$config['API_KEY'].$image);
