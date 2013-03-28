@@ -1,4 +1,8 @@
 <?php
+
+//image limist
+require_once('imageLimits.php');
+
 /**
  * api call wrapper
  */
@@ -35,38 +39,78 @@ class RecognizeImAPI {
 	}
 
 	/**
-	 * Recognize object using image
+	 * Checks image limits, depending on the recognition mode
+	 * @param $imagePath the path to the file
+	 * @param $mode the recognition mode
+	 */
+	public static function checkImageLimits($imagePath, $mode = 'single') {
+		//check the correctness of the selected mode
+		if (!in_array($mode, array('single', 'multi')))
+			throw new Exception('Wrong \'mode\' value. Should be "single" or "multi"');
+
+		//fetch image data
+		$size = filesize($imagePath) / 1000.0;		//KB
+		$dimensions = getimagesize($imagePath);
+		$width = $dimensions[0];
+		$height = $dimensions[1];
+		$surface = ($width * $height) / 1000000.0;	//Mpix
+		
+		//check image data
+		if ($mode == 'single') {
+			if ($size > SINGLEIR_MAX_FILE_SIZE ||
+				$height < SINGLEIR_MIN_DIMENSION ||
+				$width < SINGLEIR_MIN_DIMENSION ||
+				$surface < SINGLEIR_MIN_IMAGE_SURFACE ||
+				$surface > SINGLEIR_MAX_IMAGE_SURFACE ) {
+				return FALSE;
+			}
+
+		} else {
+			if ($size > MULTIIR_MAX_FILE_SIZE ||
+				$height < MULTIIR_MIN_DIMENSION ||
+				$width < MULTIIR_MIN_DIMENSION ||
+				$surface < MULTIIR_MIN_IMAGE_SURFACE ||
+				$surface > MULTIIR_MAX_IMAGE_SURFACE ) {
+				return FALSE;
+			}
+		}
+
+		//test passed, return true
+		return TRUE;
+	}
+
+	/**
+	 * Recognize object using image in single mode
 	 * @param $image query
 	 * @param $mode Recognition mode. Should be 'single' or 'multi'. Default is 'single'.
-	 * @param $allResults if TRUE returns all recognized objects in 'single' mode; otherwize only the best one
+	 * @param $getAll if TRUE returns all recognized objects in 'single' mode, otherwize only the best one; in 'multi' it enables searching for multiple instances of each object
 	 * @returns associative array containg recognition result
 	 */
-	public static function recognize($image, $mode = 'single', $allResults = FALSE) {
-		if (is_bool($mode)) {
-			$allResults = $mode;
-			$mode = 'single';
-		}
-			if (!in_array($mode, array('single', 'multi')))
-				throw new Exception('Wrong \'mode\' value. Should be "single" or "multi"');
-			$hash = md5(self::$config['API_KEY'].$image);
-			$url = self::$config['URL'].'/recognize/';
-			if ($mode == 'multi') {
-				$url .='multi/';
-			} else if ($allResults) {
+	public static function recognize($image, $mode = 'single', $getAll = FALSE) {
+		$hash = md5(self::$config['API_KEY'].$image);
+		$url = self::$config['URL'].'recognize/';
+		if ($mode == 'multi') {
+			$url .= 'multi/';
+			if ($getAll) {
+				$url .= 'allInstances/';
+			}
+		} else {
+			if ($getAll) {
 				$url .= 'allResults/';
 			}
-			$url .= self::$config['CLIENT_ID'];
-			$ch = curl_init($url);
-			curl_setopt($ch, CURLOPT_HEADER, 0);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-			curl_setopt($ch,CURLOPT_HTTPHEADER,array('x-itraff-hash: '.$hash, 'Content-type: image/jpeg'));
-			curl_setopt($ch, CURLOPT_POST, TRUE);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $image);
-			$obj = curl_exec($ch);
-			$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-			if($status != '200')
-				throw new Exception('Cannot upload photo');
-			return (array)json_decode($obj);
+		}
+		$url .= self::$config['CLIENT_ID'];
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_HEADER, 0);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_HTTPHEADER,array('x-itraff-hash: '.$hash, 'Content-type: image/jpeg'));
+		curl_setopt($ch, CURLOPT_POST, TRUE);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $image);
+		$obj = curl_exec($ch);
+		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		if($status != '200')
+			throw new Exception('Cannot upload photo');
+		return (array)json_decode($obj);
 	}
 };
 RecognizeImAPI::init();
