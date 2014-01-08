@@ -88,17 +88,11 @@ class RecognizeImAPI {
 	 */
 	public static function recognize($image, $mode = 'single', $getAll = FALSE) {
 		$hash = md5(self::$config['API_KEY'].$image);
-		$url = self::$config['URL'].'recognize/';
-		if ($mode == 'multi') {
-			$url .= 'multi/';
-			if ($getAll) {
-				$url .= 'allInstances/';
-			}
-		} else {
-			if ($getAll) {
-				$url .= 'allResults/';
-			}
-		}
+		$url = self::$config['URL'].'v2/recognize/' . $mode;
+
+		if ($getAll) {
+			$url .= 'all/';
+
 		$url .= self::$config['CLIENT_ID'];
 		$ch = curl_init($url);
 		curl_setopt($ch, CURLOPT_HEADER, 0);
