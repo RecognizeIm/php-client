@@ -102,9 +102,89 @@ class RecognizeImAPI {
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $image);
 		$obj = curl_exec($ch);
 		$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		if($status != '200')
-			throw new Exception('Cannot upload photo');
-		return (array)json_decode($obj);
+		$res = array();
+		if($status != '200') {
+			//throw new Exception('Cannot upload photo');
+			$res = array('status' => -1, 'message' => 'Cannot upload photo');
+		} else {
+			$res = (array)json_decode($obj);
+		}
+		return new RecognizeImAPIResult($res);
 	}
 };
+
+class RecognizeImAPIResult {
+	const STATUS_OK		= 0;
+	const STATUS_NO_MATCH	= 1;
+
+	protected $status 	= self::STATUS_OK;
+	protected $message 	= '';
+	protected $objects	= array();
+	
+	public function __construct($jsonData) {
+		$this->status = $jsonData['status'];
+		if ($this->status != self::STATUS_OK) {
+			$this->message = $jsonData['message'];
+			return;
+		}
+		foreach ($jsonData['objects'] as $obj) {
+			$this->objects[] = new RecognizeImAPIResultObject((array) $obj);
+		}
+		if (empty($this->objects)) {
+			$this->status = self::STATUS_NO_MATCH;
+			$this->message = 'No match found';
+		}
+	}	
+
+	public function __toString() {
+		if (!$this->isOK()) {
+			return $this->message;
+		}
+		return 'Status OK {' . implode("\n", $this->objects) . '}';
+	}
+
+	public function isOK() {
+		return $this->status == self::STATUS_OK;
+	}
+
+	public function getMessage() {
+		return $this->message;
+	}
+
+	public function getObjects() {
+		return $this->objects;
+	}
+}
+
+class RecognizeImAPIResultObject {
+	protected $id 		= NULL;
+	protected $name 	= '';
+	protected $location	= array();
+	
+	public function __construct($jsonData) {
+		$this->id 	= $jsonData['id'];
+		$this->name 	= $jsonData['name'];
+		foreach ($jsonData['location'] as $point) {
+			$this->location[] = (array) $point;
+		}
+	}
+
+	public function getId() {
+		return $this->id;
+	}
+
+	public function getName() {
+		return $this->name;
+	}
+
+	public function getLocation() {
+		return $this->location;
+	}
+
+	public function __toString() {
+		return $this->name;
+	}
+}
+
+
 RecognizeImAPI::init();
