@@ -1,7 +1,16 @@
 <?php
 
-//image limist
-require_once('imageLimits.php');
+//These are the limits for query images:
+//for SingleIR
+if (!defined('SINGLEIR_MAX_FILE_SIZE')) define("SINGLEIR_MAX_FILE_SIZE", 500); //KBytes
+if (!defined('SINGLEIR_MIN_DIMENSION')) define("SINGLEIR_MIN_DIMENSION", 100); //pix
+if (!defined('SINGLEIR_MIN_IMAGE_SURFACE')) define("SINGLEIR_MIN_IMAGE_SURFACE", 0.05); //Mpix
+if (!defined('SINGLEIR_MAX_IMAGE_SURFACE')) define("SINGLEIR_MAX_IMAGE_SURFACE", 0.31); //Mpix
+//for MultipleIR
+if (!defined('MULTIIR_MAX_FILE_SIZE')) define("MULTIIR_MAX_FILE_SIZE", 3500); //KBytes
+if (!defined('MULTIIR_MIN_DIMENSION')) define("MULTIIR_MIN_DIMENSION", 100); //pix
+if (!defined('MULTIIR_MIN_IMAGE_SURFACE')) define("MULTIIR_MIN_IMAGE_SURFACE", 0.1); //Mpix
+if (!defined('MULTIIR_MAX_IMAGE_SURFACE')) define("MULTIIR_MAX_IMAGE_SURFACE", 5.1); //Mpix
 
 /**
  * api call wrapper
@@ -12,8 +21,8 @@ class RecognizeImAPI {
 	private static $config;
 
 	//! connect
-	public static function init(){
-		self::$config = require('config.php');
+	public static function init($config){
+		self::$config = $config;
 		self::$api = new SoapClient(NULL, array('location' => self::$config['URL'], 'uri' => self::$config['URL'], 'trace' => 1, 'cache_wsdl' => WSDL_CACHE_NONE));
 		$r = self::$api->auth(self::$config['CLIENT_ID'], self::$config['CLAPI_KEY'], NULL);
 		if (is_object($r))
@@ -112,99 +121,3 @@ class RecognizeImAPI {
 		return new RecognizeImAPIResult($res);
 	}
 };
-
-class RecognizeImAPIResult {
-	const STATUS_OK		= 0;
-	const STATUS_NO_MATCH	= 1;
-
-	protected $status 	= self::STATUS_OK;
-	protected $message 	= '';
-	protected $objects	= array();
-	
-	public function __construct($jsonData) {
-		$this->status = $jsonData['status'];
-		if ($this->status != self::STATUS_OK) {
-			$this->message = $jsonData['message'];
-			return;
-		}
-		foreach ($jsonData['objects'] as $obj) {
-			$this->objects[] = new RecognizeImAPIResultObject((array) $obj);
-		}
-		if (empty($this->objects)) {
-			$this->status = self::STATUS_NO_MATCH;
-			$this->message = 'No match found';
-		}
-	}	
-
-	public function __toString() {
-		if (!$this->isOK()) {
-			return $this->message;
-		}
-		return 'Status OK {' . implode("\n", $this->objects) . '}';
-	}
-
-	public function isOK() {
-		return $this->status == self::STATUS_OK;
-	}
-
-	public function getMessage() {
-		return $this->message;
-	}
-
-	public function getObjects() {
-		return $this->objects;
-	}
-
-	public function drawFrames($file) {
-		$im = imagecreatefromstring($file);
-		if (!$im) return false;
-		$color = imagecolorallocate($im, 255, 255, 255);
-		foreach ($this->objects as $object) {
-			$location = $object->getLocation();
-			$size = count($location);
-			for ($i = 0; $i < $size; ++$i) {
-				$p1 = $location[$i];
-				$p2 = $location[($i+1)%$size];
-				imageline($im, $p1['x'], $p1['y'], $p2['x'], $p2['y'], $color);
-			}
-		}
-		ob_start();
-		imagejpeg($im);
-		$img = ob_get_clean();
-		imagedestroy($im);
-		return $img;
-	}
-}
-
-class RecognizeImAPIResultObject {
-	protected $id 		= NULL;
-	protected $name 	= '';
-	protected $location	= array();
-	
-	public function __construct($jsonData) {
-		$this->id 	= $jsonData['id'];
-		$this->name 	= $jsonData['name'];
-		foreach ($jsonData['location'] as $point) {
-			$this->location[] = (array) $point;
-		}
-	}
-
-	public function getId() {
-		return $this->id;
-	}
-
-	public function getName() {
-		return $this->name;
-	}
-
-	public function getLocation() {
-		return $this->location;
-	}
-
-	public function __toString() {
-		return $this->name;
-	}
-}
-
-
-RecognizeImAPI::init();
