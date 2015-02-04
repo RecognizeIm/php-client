@@ -21,14 +21,16 @@ class RecognizeImAPI {
 	private static $config;
 
 	//! connect
-	public static function init($config){
+	public static function init($config, $soap_enabled = true){
 		self::$config = $config;
 		self::$api = new SoapClient(NULL, array('location' => self::$config['URL'], 'uri' => self::$config['URL'], 'trace' => 1, 'cache_wsdl' => WSDL_CACHE_NONE));
-		$r = self::$api->auth(self::$config['CLIENT_ID'], self::$config['CLAPI_KEY'], NULL);
-		if (is_object($r))
-			$r = (array)$r;
-		if ($r['status']) {
-			throw new Exception("Cannot authenticate");
+		if ($soap_enabled) {
+			$r = self::$api->auth(self::$config['CLIENT_ID'], self::$config['CLAPI_KEY'], NULL);
+			if (is_object($r))
+				$r = (array)$r;
+			if ($r['status']) {
+				throw new Exception("Cannot authenticate");
+			}
 		}
 	}
 
