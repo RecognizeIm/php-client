@@ -1,5 +1,4 @@
 <?php
-require_once('RecognizeImAPI.php');
 
 //RecognizeImAPI::imageDelete(); die;
 

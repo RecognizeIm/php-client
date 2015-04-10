@@ -1,0 +1,17 @@
+{
+    "name": "recognizeim/php-client",
+    "description": "Recognize.im is providing API for Image Recognition.",
+    "authors": [
+        {
+            "name": "Recognize.im",
+            "email": "info@recognize.im"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "ext-soap": "*"
+    },
+    "autoload": {
+        "classmap": ["lib/"]
+    }
+}
