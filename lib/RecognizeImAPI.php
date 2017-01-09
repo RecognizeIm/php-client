@@ -123,3 +123,4 @@ class RecognizeImAPI {
 		return new RecognizeImAPIResult($res);
 	}
 };
+

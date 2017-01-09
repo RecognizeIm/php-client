@@ -1,13 +1,12 @@
 Recognize.im API
 ===============
 
-Recognize.im is providing API for Image Recognition. Those module is sample PHP connector to the API
+Recognize.im is providing API for Image Recognition. This module is a sample PHP connector to the API.
 
 Installation
 ============
 
-Just download the content of the lib/ directory and include the classes in your
-project or use composer:
+Just download the content of the lib/ directory and include the classes in your project or use composer:
 
     $ composer.phar require "recognizeim/php-client" "dev-master"
 
@@ -38,3 +37,4 @@ Authorization
 =============
 
 You don't need to call method auth by yourself. Module object will authorize you when needed, you just need do provide valid credentials. You can get them from your [account tab](http://recognize.im/user/profile)
+
